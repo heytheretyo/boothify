@@ -93,6 +93,7 @@ const PhotoBooth = ({
       if (timer) clearTimeout(timer);
     };
   }, [isCapturing, onCapture, setIsCapturing]);
+
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -102,15 +103,14 @@ const PhotoBooth = ({
 
     if (!context) return;
 
-    // Check if video is ready
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
+    // Ensure the video is playing and has dimensions
+    if (
+      video.paused ||
+      video.ended ||
+      video.videoWidth === 0 ||
+      video.videoHeight === 0
+    ) {
       console.error("Video is not ready yet.");
-      return;
-    }
-
-    // Make sure the video is playing before drawing on canvas
-    if (video.paused || video.ended) {
-      console.error("Video is not playing.");
       return;
     }
 
@@ -118,31 +118,17 @@ const PhotoBooth = ({
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // If iOS, add a small delay before drawing the video frame
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-      setTimeout(() => {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Draw video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Trigger flash effect
-        setFlash(true);
-        setTimeout(() => setFlash(false), 500);
+    // Trigger flash effect
+    setFlash(true);
+    setTimeout(() => setFlash(false), 500);
 
-        // Get photo data URL
-        const photoData = canvas.toDataURL("image/png");
-        onCapture(photoData);
-      }, 100); // Small delay for iOS
-    } else {
-      // For non-iOS, no delay needed
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      setFlash(true);
-      setTimeout(() => setFlash(false), 500);
-
-      const photoData = canvas.toDataURL("image/png");
-      onCapture(photoData);
-    }
+    // Get photo data URL
+    const photoData = canvas.toDataURL("image/png");
+    onCapture(photoData);
   };
-
   const handleAutocapture = () => {
     let captureCount = 0;
 
@@ -179,6 +165,7 @@ const PhotoBooth = ({
           muted
           className="w-full h-full object-cover"
           style={{
+            transform: cameraFacing === "user" ? "scaleX(-1)" : "",
             filter: `
               brightness(${brightness}%)
               saturate(${saturation / 100})

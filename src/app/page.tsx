@@ -1,5 +1,5 @@
 "use client";
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import html2canvas from "html2canvas";
 import {
   Camera,
   Download,
@@ -44,6 +45,38 @@ function Home() {
   const [activeTab, setActiveTab] = useState("capture");
   const [stripStyle, setStripStyle] = useState<StripStyle>(defaultStripStyle);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device on component mount
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileDevices =
+      /iphone|ipod|android|blackberry|windows phone|mobile/i;
+    setIsMobile(mobileDevices.test(userAgent));
+  }, []);
+
+  const applyStripStyleToClonedElement = (clonedStrip: HTMLElement) => {
+    // Apply styles from stripStyle to the cloned element
+    clonedStrip.style.backgroundColor =
+      stripStyle.backgroundType === "color" ? stripStyle.color : "#fff"; // Default background color
+    clonedStrip.style.backgroundImage =
+      stripStyle.backgroundType === "gradient" ||
+      stripStyle.backgroundType === "pattern"
+        ? stripStyle.color // Apply gradient or pattern color
+        : "";
+    clonedStrip.style.backgroundSize =
+      stripStyle.backgroundType === "pattern"
+        ? stripStyle.backgroundSize
+        : "auto";
+    clonedStrip.style.backgroundPosition =
+      stripStyle.backgroundType === "pattern" ? "0 0, 5px 5px" : "";
+    clonedStrip.style.borderColor = stripStyle.borderColor;
+    clonedStrip.style.padding = "50px"; // Add padding if necessary
+
+    // Optionally, add layout classes for stripStyle
+    clonedStrip.classList.add(`strip-layout-${stripStyle.layout}`);
+  };
+
   const handleCapture = (photoData: string) => {
     const newPhoto: Photo = {
       id: Date.now().toString(),
@@ -77,57 +110,117 @@ function Home() {
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const stripElement = document.getElementById("photo-strip"); // Get the visible strip
     if (!stripElement) return;
+
+    // Show a loading toast
+    toast.info("Generating image, please wait...");
 
     // Clone the original strip
     const clonedStrip = stripElement.cloneNode(true) as HTMLElement;
     clonedStrip.style.opacity = "1";
     clonedStrip.style.pointerEvents = "none"; // Ensure it doesn't interfere with UI
-    clonedStrip.className = `strip-layout-${stripStyle.layout}`;
-    clonedStrip.style.padding = "50px"; // Adds padding only on the x-axis
+
+    // Apply stripStyle to the cloned strip
+    applyStripStyleToClonedElement(clonedStrip);
 
     // Temporary container for rendering
     const tempContainer = document.createElement("div");
     tempContainer.appendChild(clonedStrip);
     document.body.appendChild(tempContainer);
 
-    // Convert to image
-    htmlToImage
-      .toPng(clonedStrip, {
-        cacheBust: true,
-        skipFonts: true,
-      })
-      .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "photo-strip.png";
-        link.href = dataUrl;
-        link.click();
+    try {
+      let dataUrl = "";
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Use html2canvas for iOS
+        const canvas = await html2canvas(clonedStrip, {
+          useCORS: true, // Ensure it works with cross-origin resources
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+        });
 
-        // Cleanup after download
-        document.body.removeChild(tempContainer);
-      })
-      .catch((error) => {
-        console.error("Download failed:", error);
-        document.body.removeChild(tempContainer);
-      });
+        // Convert canvas to data URL
+        dataUrl = canvas.toDataURL("image/png");
+      } else {
+        // Use html-to-image for other platforms
+        dataUrl = await htmlToImage.toPng(clonedStrip, {
+          cacheBust: true,
+          skipFonts: true, // Skip fonts if not needed
+          backgroundColor: "#fff", // Optional: Set a background color if needed
+        });
+      }
+
+      // Create a download link
+      const link = document.createElement("a");
+      link.download = "photo-strip.png";
+      link.href = dataUrl;
+      link.click();
+
+      // Show success toast
+      toast.success("Image generated and downloaded successfully!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      // Cleanup and reset visibility
+      document.body.removeChild(tempContainer);
+      clonedStrip.style.visibility = "visible"; // Make the cloned element visible again
+    }
   };
-
   const handleShare = async () => {
     const stripElement = document.getElementById("photo-strip");
     if (!stripElement) return;
 
+    const clonedStrip = stripElement.cloneNode(true) as HTMLElement;
+    clonedStrip.style.opacity = "1";
+    clonedStrip.style.pointerEvents = "none"; // Ensure it doesn't interfere with UI
+    clonedStrip.className = `strip-layout-${stripStyle.layout}`;
+    clonedStrip.style.padding = "50px"; // Adds padding only on the x-axis
+
+    clonedStrip.style.backgroundColor =
+      stripElement.style.backgroundColor || "#fff"; // Default to white if not set
+    clonedStrip.style.color = stripElement.style.color || "#000";
+
+    // Temporary container for rendering
+    const tempContainer = document.createElement("div");
+    tempContainer.appendChild(clonedStrip);
+    document.body.appendChild(tempContainer);
+
     try {
-      // Convert the element to a Blob using html-to-image
-      const blob = await htmlToImage.toBlob(stripElement, {
-        cacheBust: true,
-        skipFonts: true,
-      });
+      let blob;
 
-      if (!blob) throw new Error("Failed to generate image.");
+      // Check if the platform is iOS
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        // Use html2canvas for iOS
+        const canvas = await html2canvas(clonedStrip, {
+          useCORS: true, // Ensure it works with cross-origin resources
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+        });
 
-      // Use Web Share API if available
+        // Convert canvas to Blob
+        canvas.toBlob((imageBlob: any) => {
+          if (!imageBlob) {
+            throw new Error("Failed to generate image.");
+          }
+          blob = imageBlob;
+        });
+      } else {
+        // Use html-to-image for other platforms
+        blob = await htmlToImage.toBlob(clonedStrip, {
+          cacheBust: true,
+          skipFonts: true,
+        });
+      }
+
+      if (!blob) {
+        throw new Error("Failed to generate image.");
+      }
+
+      // Check if the Web Share API is available and share
       if (
         navigator.share &&
         navigator.canShare({
@@ -136,6 +229,7 @@ function Home() {
           ],
         })
       ) {
+        // Share using Web Share API
         await navigator.share({
           title: "My Photo Booth Strip",
           files: [
@@ -162,6 +256,8 @@ function Home() {
       }
     } catch (error) {
       console.error("Error sharing image:", error);
+
+      // Show error toast
       toast.error("Error", {
         description: "Failed to share. Please try again.",
       });
@@ -376,10 +472,12 @@ function Home() {
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
-                    <Button onClick={handleShare} className="w-full">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
+                    {isMobile && (
+                      <Button onClick={handleShare} className="w-full">
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                    )}
                   </div>
                 </div>
 

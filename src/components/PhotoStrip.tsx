@@ -10,7 +10,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Sparkles, Settings, Palette } from "lucide-react";
+import {
+  Trash2,
+  Sparkles,
+  Settings,
+  Palette,
+  FlipHorizontal,
+} from "lucide-react"; // Add FlipHorizontal icon
 import StripStyler from "./StripStyler";
 
 interface PhotoStripProps {
@@ -33,6 +39,7 @@ const PhotoStrip = ({
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(
     photos.length > 0 ? photos[0].id : null
   );
+  const [isFlipped, setIsFlipped] = useState(false); // State for flip
 
   const selectedPhoto = photos.find((p) => p.id === selectedPhotoId);
 
@@ -60,6 +67,10 @@ const PhotoStrip = ({
     }
   };
 
+  const toggleFlip = () => {
+    setIsFlipped((prev) => !prev);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-center">Your Photo Strip</h2>
@@ -69,25 +80,23 @@ const PhotoStrip = ({
           id="photo-strip"
           className="photo-strip-container"
           style={{
+            // Flip the strip horizontally based on isFlipped state
             // If the background type is 'gradient' or 'pattern', use backgroundImage
             backgroundImage:
               stripStyle.backgroundType === "gradient" ||
               stripStyle.backgroundType === "pattern"
-                ? stripStyle.color // Should be stripStyle.background, not stripStyle.color
+                ? stripStyle.color
                 : undefined,
-
             // If the background type is 'color', use backgroundColor
             backgroundColor:
               stripStyle.backgroundType === "color"
-                ? stripStyle.color // Should be stripStyle.background, not stripStyle.color
+                ? stripStyle.color
                 : undefined,
-
             // If the background is a pattern, we need to set backgroundSize and backgroundPosition
             backgroundSize:
               stripStyle.backgroundType === "pattern"
                 ? stripStyle.backgroundSize
                 : undefined,
-
             backgroundPosition:
               stripStyle.backgroundType === "pattern"
                 ? "0 0, 5px 5px"
@@ -106,6 +115,7 @@ const PhotoStrip = ({
                   alt="Photo strip"
                   className="w-full aspect-[4/3] object-cover h-full"
                   style={{
+                    transform: isFlipped ? "scaleX(-1)" : undefined,
                     filter: `
                       brightness(${photo.brightness}%)
                       contrast(${photo.contrast}%)
@@ -304,6 +314,12 @@ const PhotoStrip = ({
                 />
               </TabsContent>
             </Tabs>
+
+            {/* Button to toggle flip */}
+            <Button size={"sm"} onClick={toggleFlip} className="mt-2 w-full">
+              <FlipHorizontal className="h-4 w-4 mr-2" />
+              Flip Strip Horizontal
+            </Button>
           </div>
         </div>
       </div>
