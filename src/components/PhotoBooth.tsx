@@ -45,9 +45,7 @@ const PhotoBooth = ({
   const startCamera = async (facingMode: "user" | "environment") => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "user" }, // Ensures front camera selection
-        },
+        video: { facingMode: { ideal: facingMode } }, // Use dynamic facing mode
       });
 
       if (videoRef.current) {
@@ -61,6 +59,9 @@ const PhotoBooth = ({
     }
   };
   const toggleCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop()); // Stop current stream
+    }
     setCameraFacing((prev) => (prev === "user" ? "environment" : "user"));
   };
 
@@ -92,7 +93,6 @@ const PhotoBooth = ({
       if (timer) clearTimeout(timer);
     };
   }, [isCapturing, onCapture, setIsCapturing]);
-
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -102,20 +102,45 @@ const PhotoBooth = ({
 
     if (!context) return;
 
+    // Check if video is ready
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error("Video is not ready yet.");
+      return;
+    }
+
+    // Make sure the video is playing before drawing on canvas
+    if (video.paused || video.ended) {
+      console.error("Video is not playing.");
+      return;
+    }
+
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // If iOS, add a small delay before drawing the video frame
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+      setTimeout(() => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Trigger flash effect
-    setFlash(true);
-    setTimeout(() => setFlash(false), 500);
+        // Trigger flash effect
+        setFlash(true);
+        setTimeout(() => setFlash(false), 500);
 
-    // Get photo data URL
-    const photoData = canvas.toDataURL("image/png");
-    onCapture(photoData);
+        // Get photo data URL
+        const photoData = canvas.toDataURL("image/png");
+        onCapture(photoData);
+      }, 100); // Small delay for iOS
+    } else {
+      // For non-iOS, no delay needed
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      setFlash(true);
+      setTimeout(() => setFlash(false), 500);
+
+      const photoData = canvas.toDataURL("image/png");
+      onCapture(photoData);
+    }
   };
 
   const handleAutocapture = () => {
