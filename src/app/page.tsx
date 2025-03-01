@@ -27,6 +27,12 @@ import { defaultStripStyle } from "@/lib/stripStyles";
 import "./App.css";
 import * as htmlToImage from "html-to-image";
 import { toast } from "sonner";
+import { BrightnessAdjustment } from "@/components/CameraSettingsPopover/BrightnessAdjustment";
+import { ContrastAdjustment } from "@/components/CameraSettingsPopover/ContrastAdjustment";
+import { SaturationAdjustment } from "@/components/CameraSettingsPopover/SaturationAdjustment";
+import Image from "next/image";
+import Logo from "@/components/Logo";
+import { Footer } from "@/components/Footer";
 
 function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -72,27 +78,39 @@ function Home() {
   };
 
   const handleDownload = () => {
-    const stripElement = document.getElementById("photo-strip");
+    const stripElement = document.getElementById("photo-strip"); // Get the visible strip
     if (!stripElement) return;
 
-    // Use html2canvas to capture the element (would need to be installed)
+    // Clone the original strip
+    const clonedStrip = stripElement.cloneNode(true) as HTMLElement;
+    clonedStrip.style.opacity = "1";
+    clonedStrip.style.pointerEvents = "none"; // Ensure it doesn't interfere with UI
+    clonedStrip.className = `strip-layout-${stripStyle.layout}`;
+    clonedStrip.style.padding = "50px"; // Adds padding only on the x-axis
+
+    // Temporary container for rendering
+    const tempContainer = document.createElement("div");
+    tempContainer.appendChild(clonedStrip);
+    document.body.appendChild(tempContainer);
+
+    // Convert to image
     htmlToImage
-      .toPng(stripElement, { cacheBust: true, skipFonts: true })
+      .toPng(clonedStrip, {
+        cacheBust: true,
+        skipFonts: true,
+      })
       .then((dataUrl) => {
         const link = document.createElement("a");
-        link.download = "photo-booth-strip.png";
+        link.download = "photo-strip.png";
         link.href = dataUrl;
         link.click();
 
-        toast.success("Download complete!", {
-          description: "Your photo strip has been saved.",
-        });
+        // Cleanup after download
+        document.body.removeChild(tempContainer);
       })
-      .catch((e) => {
-        console.log(e);
-        toast.error("Error", {
-          description: "Failed to generate download. Please try again.",
-        });
+      .catch((error) => {
+        console.error("Download failed:", error);
+        document.body.removeChild(tempContainer);
       });
   };
 
@@ -102,7 +120,10 @@ function Home() {
 
     try {
       // Convert the element to a Blob using html-to-image
-      const blob = await htmlToImage.toBlob(stripElement);
+      const blob = await htmlToImage.toBlob(stripElement, {
+        cacheBust: true,
+        skipFonts: true,
+      });
 
       if (!blob) throw new Error("Failed to generate image.");
 
@@ -169,8 +190,8 @@ function Home() {
       <header className="border-b py-4 px-6 bg-card">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Camera className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Virtual Photo Booth</h1>
+            <Logo className="w-5 mt-1" />
+            <h1 className="text-2xl font-bold">boothify</h1>
           </div>
           <div className="flex gap-2">
             <Button
@@ -200,18 +221,17 @@ function Home() {
           </TabsList>
 
           <TabsContent value="capture" className="space-y-4">
+            {/* <div className="grid md:grid-cols-[1fr_300px] gap-6"> */}
             <div className="grid md:grid-cols-[1fr_300px] gap-6">
-              <div className="bg-card rounded-lg overflow-hidden shadow-lg border">
-                <PhotoBooth
-                  onCapture={handleCapture}
-                  isCapturing={isCapturing}
-                  setIsCapturing={setIsCapturing}
-                  selectedFilter={selectedFilter}
-                  brightness={brightness}
-                  contrast={contrast}
-                  saturation={saturation}
-                />
-              </div>
+              <PhotoBooth
+                onCapture={handleCapture}
+                isCapturing={isCapturing}
+                setIsCapturing={setIsCapturing}
+                selectedFilter={selectedFilter}
+                brightness={brightness}
+                contrast={contrast}
+                saturation={saturation}
+              />
 
               <div className="space-y-6">
                 <div className="bg-card p-4 rounded-lg shadow border space-y-4">
@@ -243,48 +263,18 @@ function Home() {
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Brightness: {brightness}%
-                      </label>
-                      <Slider
-                        value={[brightness]}
-                        min={50}
-                        max={150}
-                        step={1}
-                        onValueChange={(value: SetStateAction<number>[]) =>
-                          setBrightness(value[0])
-                        }
+                    <div className="space-x-1">
+                      <BrightnessAdjustment
+                        brightness={brightness}
+                        setBrightness={setBrightness}
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Contrast: {contrast}%
-                      </label>
-                      <Slider
-                        value={[contrast]}
-                        min={50}
-                        max={150}
-                        step={1}
-                        onValueChange={(value: SetStateAction<number>[]) =>
-                          setContrast(value[0])
-                        }
+                      <ContrastAdjustment
+                        contrast={contrast}
+                        setContrast={setContrast}
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Saturation: {saturation}%
-                      </label>
-                      <Slider
-                        value={[saturation]}
-                        min={50}
-                        max={150}
-                        step={1}
-                        onValueChange={(value: SetStateAction<number>[]) =>
-                          setSaturation(value[0])
-                        }
+                      <SaturationAdjustment
+                        saturation={saturation}
+                        setSaturation={setSaturation}
                       />
                     </div>
                   </div>
@@ -295,16 +285,6 @@ function Home() {
                     <ImageIcon className="h-4 w-4" />
                     Photo Strip ({photos.length}/4)
                   </h3>
-
-                  {photos.length > 0 && (
-                    <div className="mb-4">
-                      <StripPreview
-                        photos={photos}
-                        stripStyle={stripStyle}
-                        filters={filters}
-                      />
-                    </div>
-                  )}
 
                   <div className="grid grid-cols-2 gap-2">
                     {[0, 1, 2, 3].map((index) => (
@@ -373,6 +353,20 @@ function Home() {
                 />
               </div>
 
+              <div
+                id="photo-strip-download"
+                className="absolute w-[800px] h-[600px] overflow-hidden opacity-0 pointer-events-none"
+              >
+                <PhotoStrip
+                  photos={photos}
+                  updatePhoto={updatePhoto}
+                  removePhoto={removePhoto}
+                  filters={filters}
+                  stripStyle={stripStyle}
+                  updateStripStyle={updateStripStyle}
+                />
+              </div>
+
               <div className="space-y-6">
                 <div className="bg-card p-4 rounded-lg shadow border space-y-4">
                   <h3 className="font-medium">Share Your Creation</h3>
@@ -406,11 +400,7 @@ function Home() {
         </Tabs>
       </main>
 
-      <footer className="border-t py-4 px-6 bg-card mt-auto">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          Virtual Photo Booth &copy; {new Date().getFullYear()}
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

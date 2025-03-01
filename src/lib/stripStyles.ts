@@ -53,7 +53,7 @@ export const stripBackgrounds = [
     name: "pattern-stripes",
     label: "Stripes",
     color:
-      "repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 10px, #fff 10px, #fff 20px)",
+      "repeating-linear-gradient(45deg,  #000 0, #000 10px, #fff 10px, #fff 20px)",
     type: "pattern",
     description:
       "A repeating diagonal stripes pattern alternating between light gray and white.",
@@ -70,48 +70,6 @@ export const stripBackgrounds = [
       "A diagonal striped pattern alternating between black and white.",
     backgroundSize: undefined,
     backgroundPosition: undefined,
-  },
-  {
-    name: "pattern-dots",
-    label: "Dots",
-    color:
-      "radial-gradient(#000 10%, transparent 11%), radial-gradient(#000 10%, transparent 11%), #fff",
-    type: "pattern",
-    description:
-      "A repeating dot pattern with alternating transparent and solid colors.",
-    backgroundSize: "10px 10px",
-    backgroundPosition: "0 0, 5px 5px",
-  },
-  {
-    name: "pattern-hearts",
-    label: "Hearts",
-    color: "radial-gradient(circle, #ff0000 15%, transparent 15%)",
-    type: "pattern",
-    description: "A pattern of small hearts.",
-    backgroundSize: "20px 20px",
-    backgroundPosition: "0 0, 10px 10px",
-  },
-  {
-    name: "pattern-checkerboard",
-    label: "Checkerboard",
-    color:
-      "repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent 100%)",
-    type: "pattern",
-    description:
-      "A classic checkerboard pattern with black and transparent squares.",
-    backgroundSize: "20px 20px",
-    backgroundPosition: "0 0",
-  },
-  {
-    name: "pattern-zigzag",
-    label: "Zigzag",
-    color:
-      "repeating-linear-gradient(135deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%)",
-    type: "pattern",
-    description:
-      "A zigzag pattern alternating between black and transparent sections.",
-    backgroundSize: "20px 20px",
-    backgroundPosition: "0 0",
   },
 
   // Gradient backgrounds
