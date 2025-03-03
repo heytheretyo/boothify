@@ -11,6 +11,7 @@ export interface Filter {
   name: string;
   label: string;
   css: string;
+  labelCss?: string;
 }
 
 export interface StripStyle {

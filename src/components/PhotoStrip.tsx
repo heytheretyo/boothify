@@ -50,7 +50,7 @@ const PhotoStrip = ({
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(
     photos.length > 0 ? photos[0].id : null
   );
-  const [isFlipped, setIsFlipped] = useState(false); // State for flip
+  const [isFlipped, setIsFlipped] = useState(true); // State for flip
 
   const selectedPhoto = photos.find((p) => p.id === selectedPhotoId);
 
@@ -198,7 +198,7 @@ const PhotoStrip = ({
                       <div
                         key={photo.id}
                         className={`
-                          aspect-[4/3] rounded cursor-pointer overflow-hidden border-2
+                          aspect-[4/3] rounded cursor-pointer overflow-hidden border-4
                           ${
                             selectedPhotoId === photo.id
                               ? "border-primary"
@@ -212,6 +212,7 @@ const PhotoStrip = ({
                           alt="Thumbnail"
                           className="w-full h-full object-cover"
                           style={{
+                            transform: isFlipped ? "scaleX(-1)" : undefined,
                             filter: `
                               brightness(${photo.brightness}%)
                               contrast(${photo.contrast}%)
@@ -268,12 +269,13 @@ const PhotoStrip = ({
                             <div
                               key={filter.name}
                               className={`
-                                aspect-square rounded overflow-hidden cursor-pointer border-2
+                                aspect-square border-accent rounded overflow-hidden cursor-pointer border-2
                                 ${
                                   selectedPhoto.filter === filter.name
                                     ? "border-primary"
                                     : "border-transparent"
                                 }
+                                ${filter.labelCss || "bg-amber-700"}
                               `}
                               onClick={() => handleFilterChange(filter.name)}
                             >
