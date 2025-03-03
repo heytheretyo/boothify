@@ -16,6 +16,9 @@ import {
   Settings,
   Palette,
   FlipHorizontal,
+  Download,
+  Share2,
+  RefreshCw,
 } from "lucide-react"; // Add FlipHorizontal icon
 import StripStyler from "./StripStyler";
 
@@ -25,6 +28,10 @@ interface PhotoStripProps {
   removePhoto: (id: string) => void;
   filters: Filter[];
   stripStyle: StripStyle;
+  handleDownload: any;
+  handleShare: any;
+  handleReset: any;
+  isMobile: boolean;
   updateStripStyle: (style: Partial<StripStyle>) => void;
 }
 
@@ -35,6 +42,10 @@ const PhotoStrip = ({
   filters,
   stripStyle,
   updateStripStyle,
+  handleDownload,
+  handleReset,
+  handleShare,
+  isMobile,
 }: PhotoStripProps) => {
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(
     photos.length > 0 ? photos[0].id : null
@@ -133,6 +144,40 @@ const PhotoStrip = ({
         </div>
 
         <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="bg-card p-4 rounded-lg shadow border space-y-4">
+              <h3 className="font-medium">Share Your Creation</h3>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={handleDownload}
+                  className="w-full bg-primary hover:bg-primary/90 transition-colors"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+                <Button
+                  onClick={handleShare}
+                  className={`w-full ${
+                    !isMobile
+                      ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                      : "bg-primary hover:bg-primary/90"
+                  } transition-colors`}
+                  disabled={!isMobile}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                  {!isMobile && <span className="sr-only">(Mobile only)</span>}
+                </Button>
+              </div>
+              {!isMobile && (
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Sharing is available on mobile devices only
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="bg-card p-4 rounded-lg shadow border">
             <Tabs defaultValue="photos" className="w-full">
               <TabsList className="grid grid-cols-2">

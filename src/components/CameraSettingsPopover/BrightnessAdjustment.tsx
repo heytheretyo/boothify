@@ -36,7 +36,6 @@ export function BrightnessAdjustment({
                 50%
               </span>
               <Slider
-                id="brightness"
                 value={[brightness]}
                 min={50}
                 max={150}

@@ -16,7 +16,7 @@ import {
   Download,
   Share2,
   Sparkles,
-  Image as ImageIcon,
+  ImageIcon,
   RefreshCw,
 } from "lucide-react";
 import PhotoBooth from "@/components/PhotoBooth";
@@ -263,11 +263,13 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b py-4 px-6 bg-card">
+      <header className="border-b py-3 sm:py-4 px-4 sm:px-6 bg-card sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Logo className="w-5 mt-1" />
-            <h1 className="text-2xl font-bold">boothify</h1>
+            <Logo className="w-5 sm:w-6 mt-1" />
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text">
+              boothify
+            </h1>
           </div>
           <div className="flex gap-2">
             <Button
@@ -275,21 +277,22 @@ function Home() {
               size="sm"
               onClick={handleReset}
               disabled={photos.length === 0}
+              className="text-xs sm:text-sm"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Reset</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto py-6 px-4">
+      <main className="flex-1 container mx-auto py-4 sm:py-6 px-3 sm:px-4">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           className="space-y-4"
         >
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsList className="grid w-full max-w-xs sm:max-w-md mx-auto grid-cols-2 mb-6">
             <TabsTrigger value="capture">Capture</TabsTrigger>
             <TabsTrigger value="edit" disabled={photos.length === 0}>
               Edit & Share
@@ -309,8 +312,8 @@ function Home() {
                 saturation={saturation}
               />
 
-              <div className="space-y-6">
-                <div className="bg-card p-4 rounded-lg shadow border space-y-4">
+              <div className="space-y-6 -ml-24">
+                <div className="bg-card p-3 sm:p-4 rounded-lg shadow-md border space-y-3 sm:space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
                     Effects
@@ -362,22 +365,23 @@ function Home() {
                     Photo Strip ({photos.length}/4)
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2">
                     {[0, 1, 2, 3].map((index) => (
                       <div
                         key={index}
-                        className={`aspect-[3/4] rounded border ${
+                        className={`aspect-[3/4] rounded-md border ${
                           photos[index]
                             ? "bg-muted"
                             : "bg-muted/50 flex items-center justify-center"
-                        }`}
+                        } overflow-hidden transition-all hover:shadow-md`}
                       >
                         {photos[index] ? (
                           <img
-                            src={photos[index].src}
+                            src={photos[index].src || "/placeholder.svg"}
                             alt={`Photo ${index + 1}`}
                             className="w-full h-full object-cover rounded"
                             style={{
+                              transform: "scaleX(-1)",
                               filter: `
                                 brightness(${photos[index].brightness}%)
                                 contrast(${photos[index].contrast}%)
@@ -399,26 +403,24 @@ function Home() {
                     ))}
                   </div>
 
-                  <div className="mt-4">
-                    <Button
-                      className="w-full"
-                      onClick={() => setIsCapturing(true)}
-                      disabled={isCapturing || photos.length >= 4}
-                    >
-                      <Camera className="h-4 w-4 mr-2" />
-                      {photos.length === 0
-                        ? "Take First Photo"
-                        : "Take Next Photo"}
-                    </Button>
-                  </div>
+                  <Button
+                    className="w-full mt-2 bg-primary hover:bg-primary/90"
+                    onClick={() => setIsCapturing(true)}
+                    disabled={isCapturing || photos.length >= 4}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {photos.length === 0
+                      ? "Take First Photo"
+                      : `Take Photo ${photos.length + 1}/4`}
+                  </Button>
                 </div>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="edit">
-            <div className="grid md:grid-cols-[1fr_300px] gap-6">
-              <div className="bg-card rounded-lg overflow-hidden shadow-lg border p-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 px-48">
+              <div className="bg-card rounded-lg overflow-hidden shadow-lg border  sm:p-6">
                 <PhotoStrip
                   photos={photos}
                   updatePhoto={updatePhoto}
@@ -426,39 +428,50 @@ function Home() {
                   filters={filters}
                   stripStyle={stripStyle}
                   updateStripStyle={updateStripStyle}
+                  handleDownload={handleDownload}
+                  handleShare={handleShare}
+                  handleReset={handleReset}
+                  isMobile={isMobile}
                 />
               </div>
 
-              <div
-                id="photo-strip-download"
-                className="absolute w-[800px] h-[600px] overflow-hidden opacity-0 pointer-events-none"
-              >
-                <PhotoStrip
-                  photos={photos}
-                  updatePhoto={updatePhoto}
-                  removePhoto={removePhoto}
-                  filters={filters}
-                  stripStyle={stripStyle}
-                  updateStripStyle={updateStripStyle}
-                />
-              </div>
-
-              <div className="space-y-6">
+              {/* <div className="space-y-6">
                 <div className="bg-card p-4 rounded-lg shadow border space-y-4">
                   <h3 className="font-medium">Share Your Creation</h3>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={handleDownload} className="w-full">
+                    <Button
+                      onClick={handleDownload}
+                      className="w-full bg-primary hover:bg-primary/90 transition-colors"
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
-                    {isMobile && (
-                      <Button onClick={handleShare} className="w-full">
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
+                    <Button
+                      onClick={handleShare}
+                      className={`w-full ${
+                        !isMobile
+                          ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                          : "bg-primary hover:bg-primary/90"
+                      } transition-colors`}
+                      disabled={!isMobile}
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                      {!isMobile && (
+                        <span className="sr-only">(Mobile only)</span>
+                      )}
+                      </Button>
                       </Button>
                     )}
+                    </Button>
+                    )}
                   </div>
+                  {!isMobile && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Sharing is available on mobile devices only
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-card p-4 rounded-lg shadow border">
@@ -466,13 +479,13 @@ function Home() {
                   <Button
                     variant="outline"
                     onClick={handleReset}
-                    className="w-full"
+                    className="w-full hover:bg-destructive/10 hover:text-destructive transition-colors"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
                     New Photo Strip
                   </Button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </TabsContent>
         </Tabs>

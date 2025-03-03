@@ -36,7 +36,6 @@ export function ContrastAdjustment({
                 50%
               </span>
               <Slider
-                id="contrast"
                 value={[contrast]}
                 min={50}
                 max={150}

@@ -36,7 +36,6 @@ export function SaturationAdjustment({
                 50%
               </span>
               <Slider
-                id="saturation"
                 value={[saturation]}
                 min={50}
                 max={150}
