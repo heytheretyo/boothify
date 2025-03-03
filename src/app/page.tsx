@@ -34,6 +34,11 @@ import { SaturationAdjustment } from "@/components/CameraSettingsPopover/Saturat
 import Image from "next/image";
 import Logo from "@/components/Logo";
 import { Footer } from "@/components/Footer";
+import {
+  isSafariOrIos,
+  convertHtmlToPng,
+  convertHtmlToBlob,
+} from "@/lib/utils";
 
 function Home() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -46,6 +51,12 @@ function Home() {
   const [stripStyle, setStripStyle] = useState<StripStyle>(defaultStripStyle);
 
   const [isMobile, setIsMobile] = useState(false);
+
+  const exportSettings = {
+    cacheBust: true,
+    skipFonts: true, // Skip fonts if not needed
+    backgroundColor: "#fff", // Optional: Set a background color if needed
+  };
 
   // Detect mobile device on component mount
   useEffect(() => {
@@ -71,7 +82,7 @@ function Home() {
     clonedStrip.style.backgroundPosition =
       stripStyle.backgroundType === "pattern" ? "0 0, 5px 5px" : "";
     clonedStrip.style.borderColor = stripStyle.borderColor;
-    clonedStrip.style.padding = "50px"; // Add padding if necessary
+    clonedStrip.style.padding = "20px"; // Add padding if necessary
 
     // Optionally, add layout classes for stripStyle
     clonedStrip.classList.add(`strip-layout-${stripStyle.layout}`);
@@ -127,30 +138,18 @@ function Home() {
 
     // Temporary container for rendering
     const tempContainer = document.createElement("div");
+
     tempContainer.appendChild(clonedStrip);
     document.body.appendChild(tempContainer);
 
     try {
       let dataUrl = "";
-      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-        // Use html2canvas for iOS
-        const canvas = await html2canvas(clonedStrip, {
-          useCORS: true, // Ensure it works with cross-origin resources
-          logging: false,
-          scrollX: 0,
-          scrollY: -window.scrollY,
-        });
 
-        // Convert canvas to data URL
-        dataUrl = canvas.toDataURL("image/png");
-      } else {
-        // Use html-to-image for other platforms
-        dataUrl = await htmlToImage.toPng(clonedStrip, {
-          cacheBust: true,
-          skipFonts: true, // Skip fonts if not needed
-          backgroundColor: "#fff", // Optional: Set a background color if needed
-        });
-      }
+      dataUrl = isSafariOrIos()
+        ? await convertHtmlToPng(clonedStrip, 10, 150, exportSettings) // safari loves pain
+        : await convertHtmlToPng(clonedStrip, 1, 0, exportSettings);
+
+      // dataUrl = await htmlToImage.toPng(clonedStrip);
 
       // Create a download link
       const link = document.createElement("a");
@@ -191,30 +190,9 @@ function Home() {
     try {
       let blob;
 
-      // Check if the platform is iOS
-      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-        // Use html2canvas for iOS
-        const canvas = await html2canvas(clonedStrip, {
-          useCORS: true, // Ensure it works with cross-origin resources
-          logging: false,
-          scrollX: 0,
-          scrollY: -window.scrollY,
-        });
-
-        // Convert canvas to Blob
-        canvas.toBlob((imageBlob: any) => {
-          if (!imageBlob) {
-            throw new Error("Failed to generate image.");
-          }
-          blob = imageBlob;
-        });
-      } else {
-        // Use html-to-image for other platforms
-        blob = await htmlToImage.toBlob(clonedStrip, {
-          cacheBust: true,
-          skipFonts: true,
-        });
-      }
+      blob = isSafariOrIos()
+        ? await convertHtmlToBlob(clonedStrip, 10, 150, exportSettings) // safari loves pain
+        : await convertHtmlToBlob(clonedStrip, 1, 0, exportSettings);
 
       if (!blob) {
         throw new Error("Failed to generate image.");
@@ -241,7 +219,6 @@ function Home() {
           description: "Your photo strip has been shared.",
         });
       } else {
-        // Fallback: Download instead
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -261,6 +238,9 @@ function Home() {
       toast.error("Error", {
         description: "Failed to share. Please try again.",
       });
+    } finally {
+      document.body.removeChild(tempContainer);
+      clonedStrip.style.visibility = "visible"; // Make the cloned element visible again
     }
   };
 
