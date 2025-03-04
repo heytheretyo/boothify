@@ -312,7 +312,7 @@ function Home() {
                 saturation={saturation}
               />
 
-              <div className="space-y-6 -ml-24">
+              <div className="space-y-6 ">
                 <div className="bg-card p-3 sm:p-4 rounded-lg shadow-md border space-y-3 sm:space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
@@ -419,7 +419,7 @@ function Home() {
           </TabsContent>
 
           <TabsContent value="edit">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 px-48">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 ">
               <div className="bg-card rounded-lg overflow-hidden shadow-lg border  sm:p-6">
                 <PhotoStrip
                   photos={photos}

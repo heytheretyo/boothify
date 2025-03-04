@@ -23,3 +23,19 @@ export interface StripStyle {
   backgroundPosition: string;
   color: string;
 }
+
+export type StickerItem = {
+  id: string;
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+};
+
+export type Sticker = {
+  id: string;
+  src: string;
+  alt: string;
+};

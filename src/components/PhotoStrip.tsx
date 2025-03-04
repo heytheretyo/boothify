@@ -84,12 +84,14 @@ const PhotoStrip = ({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-center">Your Photo Strip</h2>
+      <h2 className="text-2xl font-bold text-center mt-2 lg:px-16">
+        Photo Editor
+      </h2>
 
       <div className="grid md:grid-cols-[1fr_300px] gap-6">
         <div
           id="photo-strip"
-          className="photo-strip-container"
+          className="photo-strip-container "
           style={{
             // Flip the strip horizontally based on isFlipped state
             // If the background type is 'gradient' or 'pattern', use backgroundImage
